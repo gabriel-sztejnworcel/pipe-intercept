@@ -4,14 +4,13 @@ import websocket
 import asyncio
 import threading
 import argparse
+import logging
 
 
 class Options:
     ws_server_port: int
     http_proxy_port: int
     pipe_name: str
-
-options = Options()
 
 
 def pipe_data_available(pipe) -> bool:
@@ -49,7 +48,7 @@ def on_message(ws_client_conn, msg, pipe):
         win32file.WriteFile(pipe, msg)
 
     except Exception as e:
-        print(e)
+        logging.error(e)
         ws_client_conn.close()
         win32file.CloseHandle(pipe)
 
@@ -63,7 +62,7 @@ def on_open(ws_client_conn, pipe):
                     ws_client_conn.send(msg, websocket.ABNF.OPCODE_BINARY)
 
         except Exception as e:
-            print(e)
+            logging.error(e)
             ws_client_conn.close()
             win32file.CloseHandle(pipe)
 
@@ -84,26 +83,28 @@ def ws_client_connect_and_handle(pipe):
             http_no_proxy=['dummyhost'])
     
     except Exception as e:
-        print(e)
+        logging.error(e)
         ws_client_conn.close()
         win32file.CloseHandle(pipe)
 
 
 def pipe_server_loop():
     try:
+        pipe = create_pipe_server(options.pipe_name)
         while True:
-            pipe = create_pipe_server(options.pipe_name)
             win32pipe.ConnectNamedPipe(pipe, None)
-
-            threading.Thread(target=ws_client_connect_and_handle, args=(pipe,)).start()
 
             # wait for an available pipe server before moving on to the next iteration
             # to avoid race condition where the ws client can connect to our next
             # pipe server
             win32pipe.WaitNamedPipe(options.pipe_name, win32pipe.NMPWAIT_WAIT_FOREVER)
+
+            pipe_next = create_pipe_server(options.pipe_name)
+            threading.Thread(target=ws_client_connect_and_handle, args=(pipe,)).start()
+            pipe = pipe_next
     
     except Exception as e:
-        print(e)
+        logging.error(e)
 
 
 async def ws_server_to_pipe_client(ws_server_conn, pipe):
@@ -113,7 +114,7 @@ async def ws_server_to_pipe_client(ws_server_conn, pipe):
             win32file.WriteFile(pipe, msg)
     
     except Exception as e:
-        print(e)
+        logging.error(e)
         await ws_server_conn.close()
         win32file.CloseHandle(pipe)
 
@@ -126,7 +127,7 @@ def pipe_client_to_ws_server(ws_server_conn, pipe, loop):
                 asyncio.run_coroutine_threadsafe(ws_server_conn.send(msg), loop)
     
     except Exception as e:
-        print(e)
+        logging.error(e)
         asyncio.run_coroutine_threadsafe(ws_server_conn.close(), loop)
         win32file.CloseHandle(pipe)
 
@@ -150,7 +151,7 @@ async def main():
             await asyncio.Future()
     
     except Exception as e:
-        print(e)
+        logging.error(e)
 
 
 def parse_cmd_args():
@@ -158,13 +159,24 @@ def parse_cmd_args():
     parser.add_argument('--pipe-name', required=True)
     parser.add_argument('--ws-port', required=True)
     parser.add_argument('--http-proxy-port', required=True)
+
+    parser.add_argument(
+        '--log-level',
+        required=False,
+        choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'],
+        default='INFO')
+
     args = parser.parse_args()
     return args
 
 
 if __name__ == '__main__':
+    print()
     args = parse_cmd_args()
+    options = Options()
     options.ws_server_port = args.ws_port
     options.http_proxy_port = args.http_proxy_port
     options.pipe_name = args.pipe_name
+    options.log_level = args.log_level
+    logging.basicConfig(level=logging.getLevelName(options.log_level))
     asyncio.run(main())
