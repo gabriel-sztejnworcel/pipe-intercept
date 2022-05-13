@@ -171,7 +171,6 @@ def parse_cmd_args():
 
 
 if __name__ == '__main__':
-    print()
     args = parse_cmd_args()
     options = Options()
     options.ws_server_port = args.ws_port
