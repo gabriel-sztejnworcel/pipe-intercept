@@ -15,11 +15,9 @@ def ws_client_on_message(ws_client_conn, msg, pipe):
         pipe_helper.pipe_write_async_await(pipe, msg)
 
     except Exception as e:
-        if isinstance(e, pywintypes.error) and e.winerror != winerror.ERROR_BROKEN_PIPE:
-            logging.error(e)
-
+        log_error(e)
         ws_client_conn.close()
-        win32file.CloseHandle(pipe)
+        pipe_helper.close_handle_ignore_error(pipe)
 
 
 def ws_client_on_open(ws_client_conn, pipe):
@@ -31,11 +29,9 @@ def ws_client_on_open(ws_client_conn, pipe):
                 ws_client_conn.send(msg, websocket.ABNF.OPCODE_BINARY)
 
         except Exception as e:
-            if isinstance(e, pywintypes.error) and e.winerror != winerror.ERROR_BROKEN_PIPE:
-                logging.error(e)
-
+            log_error(e)
             ws_client_conn.close()
-            win32file.CloseHandle(pipe)
+            pipe_helper.close_handle_ignore_error(pipe)
 
     threading.Thread(target=run).start()
 
@@ -54,11 +50,9 @@ def ws_client_connect_and_handle(pipe):
             http_no_proxy=['dummyhost'])
     
     except Exception as e:
-        if isinstance(e, pywintypes.error) and e.winerror != winerror.ERROR_BROKEN_PIPE:
-            logging.error(e)
-
+        log_error(e)
         ws_client_conn.close()
-        win32file.CloseHandle(pipe)
+        pipe_helper.close_handle_ignore_error(pipe)
 
 
 def pipe_server_loop():
@@ -77,8 +71,7 @@ def pipe_server_loop():
             pipe = pipe_next
     
     except Exception as e:
-        if isinstance(e, pywintypes.error) and e.winerror != winerror.ERROR_BROKEN_PIPE:
-            logging.error(e)
+        log_error(e)
 
 
 async def ws_server_to_pipe_client(ws_server_conn, pipe):
@@ -88,11 +81,9 @@ async def ws_server_to_pipe_client(ws_server_conn, pipe):
             pipe_helper.pipe_write_async_await(pipe, msg)
     
     except Exception as e:
-        if isinstance(e, pywintypes.error) and e.winerror != winerror.ERROR_BROKEN_PIPE:
-            logging.error(e)
-
+        log_error(e)
         await ws_server_conn.close()
-        win32file.CloseHandle(pipe)
+        pipe_helper.close_handle_ignore_error(pipe)
 
 
 def pipe_client_to_ws_server(ws_server_conn, pipe, loop):
@@ -103,11 +94,9 @@ def pipe_client_to_ws_server(ws_server_conn, pipe, loop):
             asyncio.run_coroutine_threadsafe(ws_server_conn.send(msg), loop)
     
     except Exception as e:
-        if isinstance(e, pywintypes.error) and e.winerror != winerror.ERROR_BROKEN_PIPE:
-            logging.error(e)
-            
+        log_error(e)
         asyncio.run_coroutine_threadsafe(ws_server_conn.close(), loop)
-        win32file.CloseHandle(pipe)
+        pipe_helper.close_handle_ignore_error(pipe)
 
 
 async def ws_server_handler(ws, path):
@@ -122,6 +111,16 @@ async def ws_server_handler(ws, path):
         await ws_to_pipe_task
 
 
+def log_error(e):
+    skip_log = False
+    if isinstance(e, websockets.exceptions.ConnectionClosedOK):
+        skip_log = True
+    elif isinstance(e, pywintypes.error) and e.winerror == winerror.ERROR_BROKEN_PIPE:
+        skip_log = True
+    if not skip_log:
+        logging.error(e)
+
+
 async def main():
     try:
         pipe_server_coro = asyncio.to_thread(pipe_server_loop)
@@ -130,8 +129,7 @@ async def main():
             await asyncio.Future()
     
     except Exception as e:
-        if isinstance(e, pywintypes.error) and e.winerror != winerror.ERROR_BROKEN_PIPE:
-            logging.error(e)
+        log_error(e)
 
 
 def parse_cmd_args():

@@ -51,3 +51,10 @@ def pipe_wait_for_client_async_await(pipe):
     win32pipe.ConnectNamedPipe(pipe, overlapped)
     win32event.WaitForSingleObject(overlapped.hEvent, win32event.INFINITE)
     win32file.CloseHandle(overlapped.hEvent)
+
+
+def close_handle_ignore_error(handle):
+    try:
+        win32file.CloseHandle(handle)
+    except:
+        pass
