@@ -20,7 +20,7 @@ options:
   --log-level {CRITICAL,ERROR,WARNING,INFO,DEBUG}
 ```
 ### Example
-Docker on Windows uses a named pipe to communicate between the client and the docker service. The pipe name is "\\.\pipe\docker_engine". Let's see how we can intercept this communication. We start by running the tool:
+Docker on Windows uses a named pipe to communicate between the client and the docker service. The pipe name is "\\\\.\pipe\docker_engine". Let's see how we can intercept this communication. We start by running the tool:
 ```
 C:\pipe-intercept>python pipe_intercept.py --pipe-name docker_engine --ws-port 8888 --http-proxy-port 8080
 
