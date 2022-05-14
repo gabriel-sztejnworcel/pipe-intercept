@@ -7,10 +7,14 @@ import argparse
 import logging
 
 
+PIPE_PREFIX = '\\\\.\\pipe\\'
+
+
 class Options:
     ws_server_port: int
     http_proxy_port: int
     pipe_name: str
+    pipe_fullpath: str
 
 
 def create_pipe_server(pipe_name: str):
@@ -77,8 +81,9 @@ def on_open(ws_client_conn, pipe):
 
 def ws_client_connect_and_handle(pipe):
     try:
+        print(options.pipe_name)
         ws_client_conn = websocket.WebSocketApp(
-                f'ws://127.0.0.1:{options.ws_server_port}',
+                f'ws://127.0.0.1:{options.ws_server_port}/pipe/{options.pipe_name}',
                 on_open=lambda ws_client_conn : on_open(ws_client_conn, pipe),
                 on_message=lambda ws_client_conn, msg : on_message(ws_client_conn, msg, pipe))
 
@@ -96,9 +101,7 @@ def ws_client_connect_and_handle(pipe):
 
 def pipe_server_loop():
     try:
-        print(f'create_pipe_server: {options.pipe_name}')
-        pipe = create_pipe_server(options.pipe_name)
-        print(f'pipe server: {pipe}')
+        pipe = create_pipe_server(options.pipe_fullpath)
         while True:
             overlapped = pywintypes.OVERLAPPED()
             overlapped.hEvent = win32event.CreateEvent(None, True, False, None)
@@ -110,9 +113,9 @@ def pipe_server_loop():
             # wait for an available pipe server before moving on to the next iteration
             # to avoid race condition where the ws client can connect to our next
             # pipe server
-            win32pipe.WaitNamedPipe(options.pipe_name, win32pipe.NMPWAIT_WAIT_FOREVER)
+            win32pipe.WaitNamedPipe(options.pipe_fullpath, win32pipe.NMPWAIT_WAIT_FOREVER)
 
-            pipe_next = create_pipe_server(options.pipe_name)
+            pipe_next = create_pipe_server(options.pipe_fullpath)
             threading.Thread(target=ws_client_connect_and_handle, args=(pipe,)).start()
             pipe = pipe_next
     
@@ -157,7 +160,7 @@ def pipe_client_to_ws_server(ws_server_conn, pipe, loop):
 
 
 async def ws_server_handler(ws):
-    pipe = create_pipe_client(options.pipe_name)
+    pipe = create_pipe_client(options.pipe_fullpath)
 
     ws_to_pipe_task = asyncio.create_task(ws_server_to_pipe_client(ws, pipe))
     pipe_to_ws_coro = asyncio.to_thread(
@@ -170,7 +173,7 @@ async def ws_server_handler(ws):
 async def main():
     try:
         pipe_server_coro = asyncio.to_thread(pipe_server_loop)
-        async with websockets.serve(ws_server_handler, "", options.ws_server_port):
+        async with websockets.serve(ws_server_handler, '', options.ws_server_port):
             await pipe_server_coro
             await asyncio.Future()
     
@@ -196,10 +199,18 @@ def parse_cmd_args():
 
 if __name__ == '__main__':
     args = parse_cmd_args()
+
     options = Options()
     options.ws_server_port = args.ws_port
     options.http_proxy_port = args.http_proxy_port
-    options.pipe_name = args.pipe_name
     options.log_level = args.log_level
+
+    if args.pipe_name.startswith(PIPE_PREFIX):
+        options.pipe_fullpath = args.pipe_name
+        options.pipe_name = options.pipe_fullpath[len(PIPE_PREFIX):]
+    else:
+        options.pipe_name = args.pipe_name
+        options.pipe_fullpath = PIPE_PREFIX + options.pipe_name
+
     logging.basicConfig(level=logging.getLevelName(options.log_level))
     asyncio.run(main())
