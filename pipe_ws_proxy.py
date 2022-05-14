@@ -1,4 +1,4 @@
-import win32file, win32pipe
+import win32file, win32pipe, pywintypes, win32event
 import websockets
 import websocket
 import asyncio
@@ -13,15 +13,10 @@ class Options:
     pipe_name: str
 
 
-def pipe_data_available(pipe) -> bool:
-    (_, avail, _) = win32pipe.PeekNamedPipe(pipe, 0)
-    return avail > 0
-
-
 def create_pipe_server(pipe_name: str):
     return win32pipe.CreateNamedPipe(
         pipe_name,
-        win32pipe.PIPE_ACCESS_DUPLEX,
+        win32pipe.PIPE_ACCESS_DUPLEX | win32file.FILE_FLAG_OVERLAPPED,
         win32pipe.PIPE_TYPE_MESSAGE | win32pipe.PIPE_READMODE_MESSAGE,
         win32pipe.PIPE_UNLIMITED_INSTANCES,
         65536,
@@ -38,14 +33,19 @@ def create_pipe_client(pipe_name: str):
         0,
         None,
         win32file.OPEN_EXISTING,
-        0,
+        win32file.FILE_FLAG_OVERLAPPED,
         None
     )
 
 
 def on_message(ws_client_conn, msg, pipe):
     try:
-        win32file.WriteFile(pipe, msg)
+        overlapped = pywintypes.OVERLAPPED()
+        overlapped.hEvent = win32event.CreateEvent(None, True, False, None)
+        win32file.WriteFile(pipe, msg, overlapped)
+        win32event.WaitForSingleObject(overlapped.hEvent, win32event.INFINITE)
+        # get overlapped result?
+        win32file.CloseHandle(overlapped.hEvent)
 
     except Exception as e:
         logging.error(e)
@@ -57,9 +57,15 @@ def on_open(ws_client_conn, pipe):
     def run():
         try:
             while True:
-                if pipe_data_available(pipe):
-                    (_, msg) = win32file.ReadFile(pipe, 65536)
-                    ws_client_conn.send(msg, websocket.ABNF.OPCODE_BINARY)
+                overlapped = pywintypes.OVERLAPPED()
+                overlapped.hEvent = win32event.CreateEvent(None, True, False, None)
+                read_buf = win32file.AllocateReadBuffer(65536)
+                win32file.ReadFile(pipe, read_buf, overlapped)
+                win32event.WaitForSingleObject(overlapped.hEvent, win32event.INFINITE)
+                read_buf_len = win32pipe.GetOverlappedResult(pipe, overlapped, True)
+                msg = bytes(read_buf[:read_buf_len])
+                win32file.CloseHandle(overlapped.hEvent)
+                ws_client_conn.send(msg, websocket.ABNF.OPCODE_BINARY)
 
         except Exception as e:
             logging.error(e)
@@ -90,9 +96,16 @@ def ws_client_connect_and_handle(pipe):
 
 def pipe_server_loop():
     try:
+        print(f'create_pipe_server: {options.pipe_name}')
         pipe = create_pipe_server(options.pipe_name)
+        print(f'pipe server: {pipe}')
         while True:
-            win32pipe.ConnectNamedPipe(pipe, None)
+            overlapped = pywintypes.OVERLAPPED()
+            overlapped.hEvent = win32event.CreateEvent(None, True, False, None)
+            win32pipe.ConnectNamedPipe(pipe, overlapped)
+            win32event.WaitForSingleObject(overlapped.hEvent, win32event.INFINITE)
+            # get overlapped result?
+            win32file.CloseHandle(overlapped.hEvent)
 
             # wait for an available pipe server before moving on to the next iteration
             # to avoid race condition where the ws client can connect to our next
@@ -111,7 +124,12 @@ async def ws_server_to_pipe_client(ws_server_conn, pipe):
     try:
         while True:
             msg = await ws_server_conn.recv()
-            win32file.WriteFile(pipe, msg)
+            overlapped = pywintypes.OVERLAPPED()
+            overlapped.hEvent = win32event.CreateEvent(None, True, False, None)
+            win32file.WriteFile(pipe, msg, overlapped)
+            win32event.WaitForSingleObject(overlapped.hEvent, win32event.INFINITE)
+            # get overlapped result?
+            win32file.CloseHandle(overlapped.hEvent)
     
     except Exception as e:
         logging.error(e)
@@ -122,9 +140,15 @@ async def ws_server_to_pipe_client(ws_server_conn, pipe):
 def pipe_client_to_ws_server(ws_server_conn, pipe, loop):
     try:
         while True:
-            if pipe_data_available(pipe):
-                (_, msg) = win32file.ReadFile(pipe, 65536)
-                asyncio.run_coroutine_threadsafe(ws_server_conn.send(msg), loop)
+            overlapped = pywintypes.OVERLAPPED()
+            overlapped.hEvent = win32event.CreateEvent(None, True, False, None)
+            read_buf = win32file.AllocateReadBuffer(65536)
+            win32file.ReadFile(pipe, read_buf, overlapped)
+            win32event.WaitForSingleObject(overlapped.hEvent, win32event.INFINITE)
+            read_buf_len = win32pipe.GetOverlappedResult(pipe, overlapped, True)
+            msg = bytes(read_buf[:read_buf_len])
+            win32file.CloseHandle(overlapped.hEvent)
+            asyncio.run_coroutine_threadsafe(ws_server_conn.send(msg), loop)
     
     except Exception as e:
         logging.error(e)
