@@ -57,7 +57,7 @@ Now if we open the WebSocket tab in Burp, we can see the communication:
 
 We can also turn interception on and change the message:
 
-~[Burp Intercept](images/burp_intercept.png)
+![Burp Intercept](images/burp_intercept.png)
 
 ```
 Microsoft Windows [Version 10.0.17763.2803]
