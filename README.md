@@ -4,3 +4,4 @@ Named Pipes is a very popular mechanism for interprocess communication on Window
 This project is heavily inspired by the great [MITM_Intercept](https://github.com/cyberark/MITM_Intercept) project from CyberArk Labs.
 ### How Does it Work?
 The tool creates a client/server pipe proxy with a WebSocket client/server bridge. The WebSocket client connects to the WebSocket server through a proxy such as Burp.
+![Flow Diagram](images/pipe-intercept.png)
