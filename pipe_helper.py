@@ -43,3 +43,11 @@ def pipe_read_async_await(pipe, read_buf) -> bytes:
     read_buf_len = win32pipe.GetOverlappedResult(pipe, overlapped, True)
     win32file.CloseHandle(overlapped.hEvent)
     return bytes(read_buf[:read_buf_len])
+
+
+def pipe_wait_for_client_async_await(pipe):
+    overlapped = pywintypes.OVERLAPPED()
+    overlapped.hEvent = win32event.CreateEvent(None, True, False, None)
+    win32pipe.ConnectNamedPipe(pipe, overlapped)
+    win32event.WaitForSingleObject(overlapped.hEvent, win32event.INFINITE)
+    win32file.CloseHandle(overlapped.hEvent)
