@@ -80,3 +80,5 @@ C:\>dir
 
 C:\>
 ```
+### Important Note
+This tool should not be used in production systems as it might break the target application. For example, the application might find a pipe server instance with its own name and fail to start.
