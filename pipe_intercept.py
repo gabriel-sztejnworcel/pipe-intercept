@@ -132,22 +132,6 @@ async def main():
         log_error(e)
 
 
-def parse_cmd_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--pipe-name', required=True)
-    parser.add_argument('--ws-port', required=True)
-    parser.add_argument('--http-proxy-port', required=True)
-
-    parser.add_argument(
-        '--log-level',
-        required=False,
-        choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'],
-        default='INFO')
-
-    args = parser.parse_args()
-    return args
-
-
 if __name__ == '__main__':
     config_handler.init_config()
     logging.basicConfig(level=logging.getLevelName(config_handler.Config.log_level))
