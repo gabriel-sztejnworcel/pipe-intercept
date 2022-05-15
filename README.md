@@ -16,6 +16,11 @@ It's important to understand that this tool works by creating separate pipe serv
 4. In case the tool creates the first pipe server instance, the target server application might fail to start (if it uses FILE_FLAG_FIRST_PIPE_INSTANCE)
 
 As you can see from the items above, using this tool could change the behavior of the target application. Please remember that this tool is primarily for security testing, do not use it in production systems.
+### Dependencies
+To install the dependencies:
+```
+pip install -r requirements.txt
+```
 ### Usage
 ```
 usage: pipe_intercept.py [-h] --pipe-name PIPE_NAME --ws-port WS_PORT --http-proxy-port HTTP_PROXY_PORT [--log-level {CRITICAL,ERROR,WARNING,INFO,DEBUG}]
