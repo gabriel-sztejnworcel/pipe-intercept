@@ -1,6 +1,6 @@
 # pipe-intercept
 #### Intercept Windows Named Pipes communication using Burp or similar HTTP proxy tools
-Named Pipes are very popular for interprocess communication on Windows. They are used in many application, including Windows Remote Procedure Call (RPC). The purpose of this tool is to allow security researchers and pentesters to perform security assessment for application that use named pipes.
+Named Pipes are very popular for interprocess communication on Windows. They are used in many applications, including Windows Remote Procedure Call (RPC). The purpose of this tool is to allow security researchers and pentesters to perform security assessment for applications that use named pipes.
 This project is inspired by the great [MITM_Intercept](https://github.com/cyberark/MITM_Intercept) project from CyberArk Labs.
 ### How Does it Work?
 The tool creates a client/server pipe proxy with a WebSocket client/server bridge. The WebSocket client connects to the WebSocket server through a proxy such as Burp.
@@ -8,6 +8,14 @@ The tool creates a client/server pipe proxy with a WebSocket client/server bridg
 Flow diagram:
 
 ![Flow Diagram](images/pipe-intercept.png)
+
+It's important to understand that this tool works by creating separate pipe server instances, apart from the instances created by the target server application, making the target client application connect to these proxy instances. This means a few things:
+1. If the tool runs after the target server application has started and created its pipe server instances, the user running the tool must have enough permissions to create pipe server instances
+2. Usually, a server application will always have one pipe server instance waiting for a client connection. Clients connect in FIFO order so it's possible that after you run the tool, the first client will connect to the instance created by the target application, and the next clients will start going through the proxy. Some applications might behave differently, they might not have a listening instance all the time, or they might even have more than one - at the moment you will need to try and understand how your target application works
+3. Some applications will check the pipe client/server on the other end (by process ID, username etc.) and use it as an authentication method. In these cases the tool might not work
+4. In case the tool creates the first pipe server instance, the target server application might fail to start (if it uses FILE_FLAG_FIRST_PIPE_INSTANCE)
+
+As you can see from the items above, using this tool could change the behavior of the target application. Please remember that this tool is primarily for security testing, do not use it in production systems.
 ### Usage
 ```
 usage: pipe_intercept.py [-h] --pipe-name PIPE_NAME --ws-port WS_PORT --http-proxy-port HTTP_PROXY_PORT [--log-level {CRITICAL,ERROR,WARNING,INFO,DEBUG}]
@@ -80,5 +88,3 @@ C:\>dir
 
 C:\>
 ```
-### Important Note
-This tool should not be used in production systems as it might break the target application. For example, the application might find a pipe server instance with its own name and fail to start.
