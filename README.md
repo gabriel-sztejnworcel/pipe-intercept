@@ -27,7 +27,7 @@ C:\pipe-intercept>python pipe_intercept.py --pipe-name docker_engine --ws-port 8
 INFO:websockets.server:server listening on 0.0.0.0:8888
 INFO:websockets.server:server listening on [::]:8888
 ```
-Now we can start burp, and from another shell create and run a Windows container:
+Now we can start Burp, and from another shell create and run a Windows container:
 ```
 C:\pipe-intercept>docker run -it --name win mcr.microsoft.com/windows:1809-amd64 cmd
 
