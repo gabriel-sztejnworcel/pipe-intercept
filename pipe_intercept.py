@@ -62,8 +62,7 @@ def pipe_server_loop():
             pipe_helper.pipe_wait_for_client_async_await(pipe)
 
             # wait for an available pipe server before moving on to the next iteration
-            # to avoid race condition where the ws client can connect to our next
-            # pipe server
+            # to avoid race condition where the ws client can connect to our next pipe server
             win32pipe.WaitNamedPipe(config_handler.Config.pipe_fullpath, win32pipe.NMPWAIT_WAIT_FOREVER)
 
             pipe_next = pipe_helper.create_pipe_server(config_handler.Config.pipe_fullpath)
