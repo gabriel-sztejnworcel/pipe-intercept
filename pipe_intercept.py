@@ -125,7 +125,6 @@ async def main():
         pipe_server_coro = asyncio.to_thread(pipe_server_loop)
         async with websockets.serve(ws_server_handler, '', config_handler.Config.ws_server_port):
             await pipe_server_coro
-            await asyncio.Future()
     
     except Exception as e:
         log_error(e)
