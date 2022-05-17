@@ -19,7 +19,7 @@ It's important to understand that this tool works by creating separate pipe serv
 
 As you can see from the items above, using this tool could change the behavior of the target application. Please remember that this tool is primarily for security testing, do not use it in production systems.
 ### Dependencies
-To install the dependencies:
+The tool was tested with Python versions 3.10.2 and 3.10.4. To install the dependencies:
 ```
 pip install -r requirements.txt
 ```
@@ -30,8 +30,10 @@ usage: pipe_intercept.py [-h] --pipe-name PIPE_NAME --ws-port WS_PORT --http-pro
 options:
   -h, --help            show this help message and exit
   --pipe-name PIPE_NAME
-  --ws-port WS_PORT
+                        The name of the pipe to be intercepted
+  --ws-port WS_PORT     An available port number for the internal WebSocket server
   --http-proxy-port HTTP_PROXY_PORT
+                        The port number of the HTTP proxy
   --log-level {CRITICAL,ERROR,WARNING,INFO,DEBUG}
 ```
 ### Example
