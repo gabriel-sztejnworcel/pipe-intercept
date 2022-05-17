@@ -25,16 +25,17 @@ pip install -r requirements.txt
 ```
 ### Usage
 ```
-usage: pipe_intercept.py [-h] --pipe-name PIPE_NAME --ws-port WS_PORT --http-proxy-port HTTP_PROXY_PORT [--log-level {CRITICAL,ERROR,WARNING,INFO,DEBUG}]
+usage: pipe_intercept.py [-h] --pipe-name PIPE_NAME [--ws-port WS_PORT] [--http-proxy-port HTTP_PROXY_PORT] [--log-level {CRITICAL,ERROR,WARNING,INFO,DEBUG}]
 
 options:
   -h, --help            show this help message and exit
   --pipe-name PIPE_NAME
                         The name of the pipe to be intercepted
-  --ws-port WS_PORT     An available port number for the internal WebSocket server
+  --ws-port WS_PORT     An available port number for the internal WebSocket server (if not specified, a random port will be used)
   --http-proxy-port HTTP_PROXY_PORT
-                        The port number of the HTTP proxy
+                        The port number of the HTTP proxy (if not specified, the default is 8080)
   --log-level {CRITICAL,ERROR,WARNING,INFO,DEBUG}
+                        Log level (if not specified, the default is INFO)
 ```
 ### Example
 Docker on Windows uses a named pipe to communicate between the client and the docker service. The pipe name is "\\\\.\pipe\docker_engine". Let's see how we can intercept this communication. We start by running the tool:
