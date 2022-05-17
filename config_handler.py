@@ -13,14 +13,29 @@ class Config:
 
 def parse_cmd_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--pipe-name', required=True, help='The name of the pipe to be intercepted')
-    parser.add_argument('--ws-port', required=True, help='An available port number for the internal WebSocket server')
-    parser.add_argument('--http-proxy-port', required=True, help='The port number of the HTTP proxy')
+
+    parser.add_argument(
+        '--pipe-name', required=True, help='The name of the pipe to be intercepted')
+
+    parser.add_argument(
+        '--ws-port',
+        required=False,
+        help='An available port number for the internal WebSocket server (if not specified, a random port will be used)',
+        default=0,
+        type=int)
+
+    parser.add_argument(
+        '--http-proxy-port',
+        required=False,
+        help='The port number of the HTTP proxy (if not specified, the default is 8080)',
+        default=8080,
+        type=int)
 
     parser.add_argument(
         '--log-level',
         required=False,
         choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'],
+        help='Log level (if not specified, the default is INFO)',
         default='INFO')
 
     args = parser.parse_args()

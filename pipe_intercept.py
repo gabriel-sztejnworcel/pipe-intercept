@@ -6,7 +6,6 @@ import websockets
 import websocket
 import asyncio
 import threading
-import argparse
 import logging
 
 
@@ -123,7 +122,10 @@ def log_error(e):
 async def main():
     try:
         pipe_server_coro = asyncio.to_thread(pipe_server_loop)
-        async with websockets.serve(ws_server_handler, '', config_handler.Config.ws_server_port):
+        async with websockets.serve(ws_server_handler, '127.0.0.1', config_handler.Config.ws_server_port) as ws_server:
+            if config_handler.Config.ws_server_port == 0:
+                # 0 means listen on a random port, we neet to get it for the WebSocket client
+                config_handler.Config.ws_server_port = ws_server.server.sockets[0].getsockname()[1]
             await pipe_server_coro
     
     except Exception as e:
