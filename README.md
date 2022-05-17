@@ -3,7 +3,7 @@
 Named Pipes are very popular for interprocess communication on Windows. They are used in many applications, including Windows Remote Procedure Call (RPC). The purpose of this tool is to allow security researchers and pentesters to perform security assessment for applications that use named pipes.
 This project is inspired by the amazing [MITM_Intercept](https://github.com/cyberark/MITM_Intercept) project from CyberArk Labs.
 ### How Does it Work?
-The tool creates a pipe client/server proxy with a WebSocket client/server bridge. The WebSocket client connects to the WebSocket server through a proxy such as Burp.
+The tool creates a pipe client/server proxy with a WebSocket client/server bridge. The WebSocket client connects to the WebSocket server through an HTTP proxy such as Burp.
 
 **Important note:** This tool uses win32 api to create the named pipes, so it only works on Windows. Currently it needs to run on the same machine as the target pipe server and the HTTP proxy. I might add an option to use a remote proxy, and an option to relay to a remote pipe server, but the tool will still have to run on Windows.
 
