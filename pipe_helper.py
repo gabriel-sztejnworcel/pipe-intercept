@@ -1,3 +1,4 @@
+from typing import Any
 import win32file, win32pipe
 import win32event, pywintypes
 
@@ -51,6 +52,18 @@ def pipe_wait_for_client_async_await(pipe):
     win32pipe.ConnectNamedPipe(pipe, overlapped)
     win32event.WaitForSingleObject(overlapped.hEvent, win32event.INFINITE)
     win32file.CloseHandle(overlapped.hEvent)
+
+
+def pipe_wait_for_client_async_nowait(pipe) -> Any:
+    overlapped = pywintypes.OVERLAPPED()
+    overlapped.hEvent = win32event.CreateEvent(None, True, False, None)
+    win32pipe.ConnectNamedPipe(pipe, overlapped)
+    return overlapped.hEvent
+
+
+def wait_and_close_event(event):
+    win32event.WaitForSingleObject(event, win32event.INFINITE)
+    win32file.CloseHandle(event)
 
 
 def close_handle_ignore_error(handle):
