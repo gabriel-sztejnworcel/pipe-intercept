@@ -21,11 +21,11 @@ def server_to_client_flow(sent_msg: bytes, expected_rcvd_msg: bytes):
     pipe_name = str(uuid.uuid4())
 
     pipe_intercept_process = subprocess.Popen(
-        ['python', '../pipe_intercept.py', '--pipe-name', pipe_name, '--http-proxy-port', f'{HTTP_PROXY_PORT}', '--log-level', 'DEBUG'],
+        ['python', 'pipe_intercept.py', '--pipe-name', pipe_name, '--http-proxy-port', f'{HTTP_PROXY_PORT}', '--log-level', 'DEBUG'],
         creationflags=subprocess.CREATE_NEW_CONSOLE)
 
     time.sleep(1)
-    ws_proxy_process = subprocess.Popen(['python', 'http_proxy.py'], creationflags=subprocess.CREATE_NEW_CONSOLE)
+    ws_proxy_process = subprocess.Popen(['python', 'tests/http_proxy.py'], creationflags=subprocess.CREATE_NEW_CONSOLE)
     time.sleep(2)
 
     pipe_server, pipe_client = create_pipe_client_server(pipe_name)
