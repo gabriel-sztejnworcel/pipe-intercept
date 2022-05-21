@@ -4,3 +4,4 @@ pywin32
 asyncio
 pytest
 uuid
+http_parser
