@@ -55,6 +55,7 @@ async def forward_data(reader, writer):
     try:
         while not reader.at_eof():
             msg = await reader.read(65536)
+            msg = msg.replace(b'zerothis', b'00000000')
             writer.write(msg)
             await writer.drain()
 
