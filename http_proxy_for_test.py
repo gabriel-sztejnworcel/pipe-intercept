@@ -6,24 +6,27 @@ from http_parser.pyparser import HttpParser
 HTTP_PROXY_PORT = 9999
 
 
+class ProxyException(Exception):
+    pass
+
+
 async def proxy_server_handler(server_reader, server_writer):
     try:
         req = await server_reader.read(65536)
         host, port = handle_connect_request(req)
-        logging.info(f'Received CONNECT request to {host}:{port}')
 
         client_reader, client_writer = await asyncio.open_connection(host, port)
         server_writer.write(b'HTTP/1.1 200 OK\r\n\r\n')
         await server_writer.drain()
 
-        server_to_client_task = asyncio.create_task(forward_data(server_reader, client_writer))
-        client_to_server_task = asyncio.create_task(forward_data(client_reader, server_writer))
+        asyncio.create_task(forward_data(server_reader, client_writer))
+        asyncio.create_task(forward_data(client_reader, server_writer))
 
-        await server_to_client_task
-        await client_to_server_task
+    except ProxyException as e:
+        logging.warning(e)
 
     except Exception as e:
-        logging.error(e)
+        pass
 
 
 def handle_connect_request(req: bytes):
@@ -31,17 +34,17 @@ def handle_connect_request(req: bytes):
     parsed_len = parser.execute(req, len(req))
 
     if parsed_len != len(req):
-        raise Exception('Invalid request')
+        raise ProxyException(f'Invalid request: {req}')
 
     method = parser.get_method()
     if method != 'CONNECT':
-        raise Exception('Invalid request')
+        raise ProxyException(f'Invalid request method: {method}')
 
     host = parser.get_headers()['HOST'] 
     host_split = host.split(':')
 
     if len(host_split) != 2:
-        raise Exception('Invalid request')
+        raise ProxyException(f'Invalid host: {host}')
 
     host = host_split[0]
     port = host_split[1]
@@ -49,13 +52,16 @@ def handle_connect_request(req: bytes):
 
 
 async def forward_data(reader, writer):
-    while True:
-        msg = await reader.read(65536)
-        logging.info(msg)
-        msg = msg.replace(b'hello', b'olleh')
-        logging.info(msg)
-        writer.write(msg)
-        await writer.drain()
+    try:
+        while not reader.at_eof():
+            msg = await reader.read(65536)
+            writer.write(msg)
+            await writer.drain()
+
+    except:
+        pass
+
+    writer.close()
 
 
 async def main():
