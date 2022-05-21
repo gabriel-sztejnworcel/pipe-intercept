@@ -37,6 +37,11 @@ options:
   --log-level {CRITICAL,ERROR,WARNING,INFO,DEBUG}
                         Log level (if not specified, the default is INFO)
 ```
+### Run Tests
+From the root folder (pipe-intercept):
+```
+pytest
+```
 ### Example
 Docker on Windows uses a named pipe to communicate between the client and the docker service. The pipe name is "\\\\.\pipe\docker_engine". Let's see how we can intercept this communication. We start by running the tool:
 ```
