@@ -33,18 +33,20 @@ def test_pipe_intercept_msg_unchanged():
         ['python', 'pipe_intercept.py', '--pipe-name', pipe_name, '--http-proxy-port', f'{HTTP_PROXY_PORT}', '--log-level', 'DEBUG'],
         creationflags=subprocess.CREATE_NEW_CONSOLE)
 
-    time.sleep(10)
-    
-    ws_proxy_process = subprocess.Popen(['python', 'ws_proxy_for_test.py'], creationflags=subprocess.CREATE_NEW_CONSOLE)
-
-    time.sleep(10)
+    time.sleep(1)
+    ws_proxy_process = subprocess.Popen(['python', 'http_proxy_for_test.py'], creationflags=subprocess.CREATE_NEW_CONSOLE)
+    time.sleep(2)
 
     pipe_server, pipe_client = create_pipe_client_server(pipe_name)
 
     pipe_helper.pipe_write_async_await(pipe_client, b'hello')
     read_buf = win32file.AllocateReadBuffer(65536)
     msg = pipe_helper.pipe_read_async_await(pipe_server, read_buf)
-    print(msg)
 
+    # pipe_intercept_process.kill()
     pipe_intercept_process.wait()
+
+    # ws_proxy_process.kill()
     ws_proxy_process.wait()
+
+    assert msg == b'hello'

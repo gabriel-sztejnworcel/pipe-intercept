@@ -13,7 +13,8 @@ async def proxy_server_handler(server_reader, server_writer):
         logging.info(f'Received CONNECT request to {host}:{port}')
 
         client_reader, client_writer = await asyncio.open_connection(host, port)
-        logging.info('Connected')
+        server_writer.write(b'HTTP/1.1 200 OK\r\n\r\n')
+        await server_writer.drain()
 
         server_to_client_task = asyncio.create_task(forward_data(server_reader, client_writer))
         client_to_server_task = asyncio.create_task(forward_data(client_reader, server_writer))
@@ -48,10 +49,11 @@ def handle_connect_request(req: bytes):
 
 
 async def forward_data(reader, writer):
-    logging.info('forward_data')
     while True:
         msg = await reader.read(65536)
-        logging.info(f'got data: {msg}')
+        logging.info(msg)
+        msg = msg.replace(b'hello', b'olleh')
+        logging.info(msg)
         writer.write(msg)
         await writer.drain()
 
