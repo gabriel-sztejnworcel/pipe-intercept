@@ -45,10 +45,9 @@ pytest
 ### Example
 Docker on Windows uses a named pipe to communicate between the client and the docker service. The pipe name is "\\\\.\pipe\docker_engine". Let's see how we can intercept this communication. We start by running the tool:
 ```
-C:\pipe-intercept>python pipe_intercept.py --pipe-name docker_engine --ws-port 8888 --http-proxy-port 8080
+C:\pipe-intercept>python pipe_intercept.py --pipe-name docker_engine
 
-INFO:websockets.server:server listening on 0.0.0.0:8888
-INFO:websockets.server:server listening on [::]:8888
+INFO:websockets.server:server listening on 127.0.0.1:12037
 ```
 Now we can start Burp, and from another shell create a Windows container:
 ```
